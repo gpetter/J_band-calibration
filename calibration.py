@@ -43,22 +43,22 @@ sept_list_filename = sept + 'sept.txt'
 bandline = 0
 indexjhk = 0
 
-#parameters: edit these
+# parameters: edit these
 ############################################################################
 
-#band: 'j' or 'k'
+# band: 'j' or 'k'
 band = 'j'
-#mode, run or display writeup
+# mode, run or display writeup
 writeup = True
 
-#scale: arcsec/pixel, measure with imexam
+# scale: arcsec/pixel, measure with imexam
 scale = 0.159
-#fwhm for oct and sept image: in arcsec
+# fwhm for oct and sept image: in arcsec
 seeing_fwhm_oct = .4452
 seeing_fwhm_sept = .7791
-#lower and upper bounds of pixels to cut. use to remove false sources from the artifacts near the edge of the image
-lower = 130
-upper = 2250
+# lower and upper bounds of pixels to cut. use to remove false sources from the artifacts near the edge of the image
+loweroct = 130
+upperoct = 2250
 lowersept = 130
 uppersept = 4300
 
@@ -83,11 +83,11 @@ octzp, octzperr = 0, 0
 aperture_list_asec = [0, 0.6, 0.8, 1, 1.2, 1.4, 1.6, 1.8, 2, 2.2, 2.4, 2.6, 2.8, 3, 3.2, 3.4, 3.6, 3.8, 4, 4.2, 4.4,
                       4.6, 4.8, 5, 5.2, 5.4, 5.6, 5.8, 6, 6.2, 6.4, 6.6]
 
-aperture_list_pix = [i * (1/scale) for i in aperture_list_asec]
+aperture_list_pix = [i * (1 / scale) for i in aperture_list_asec]
 aperture_list_asec_radius = [float(i) / 2 for i in aperture_list_asec]
 aperture_list_asec_radius.pop(0)
 convergeap, convergesept = 0, 0
-separation = (1/scale) * aperture_list_asec[len(aperture_list_asec) - 1] + 15
+separation = (1 / scale) * aperture_list_asec[len(aperture_list_asec) - 1] + 15
 # create work paths
 if not os.path.exists(sept):
     os.makedirs(sept)
@@ -156,7 +156,8 @@ def extractOct():
         for line in fileinput.input(cleanname, inplace=1):
             x = line.split(' ')
             if (not line.startswith('N')) and (int(x[3]) == 0) and (
-                            lower < float(x[1]) < upper) and (lower < float(x[2]) < upper) and (float(x[24]) > 0):
+                            loweroct < float(x[1]) < upperoct) and (loweroct < float(x[2]) < upperoct) and (
+                float(x[24]) > 0):
                 temp1.append(x[1])
                 temp2.append(x[2])
                 sys.stdout.write(line)
@@ -165,15 +166,17 @@ def extractOct():
             for y in range(len(temp1)):
                 f.write('circle(%s,%s,%s)' % (temp1[y], temp2[y], 30) + '\n')
 
+
 # tune values to permit what can be counted as a star
 # range in x axis which selects sources on the horizontal branch of graph
 minlogflux, maxlogflux = -13.5, -7
-#coeffecient of biweight midvariance sigma from the median to select sources, one for each chip
+# coeffecient of biweight midvariance sigma from the median to select sources, one for each chip
 sigmamultiple = [2.5, 5, 2, 5]
-#if data is bad and horizontal branch is not clearly defined, (has a significant spread in y-axis), use this.
-#this is the maximum FWHM value that will be used, so that sources which fall above this line are excluded
-#from median and BWMV calculation
+# if data is bad and horizontal branch is not clearly defined, (has a significant spread in y-axis), use this.
+# this is the maximum FWHM value that will be used, so that sources which fall above this line are excluded
+# from median and BWMV calculation
 maxfwhm = 3.4
+
 
 # create plot of all sources' -2.5log(flux_4asec) vs FWHM. Distinguish those sources which lie on a horizontal
 # branch of the diagram, indicating star-like
@@ -208,7 +211,7 @@ def makeplot(month):
             for line in fileinput.input(thefile, inplace=1):
                 x = line.split(' ')
                 if (not line.startswith('N')) and ((med - sigmamultiple[num] * sig) < float(x[5]) <
-                                                    (med + sigmamultiple[num] * sig)):
+                                                       (med + sigmamultiple[num] * sig)):
                     flux_aper.append((-2.5 * (math.log10(float(x[24])))))
                     fwhm.append(x[5])
                     sys.stdout.write(line)
@@ -263,7 +266,8 @@ def makeplot(month):
         plt.clf()
         plt.close()
 
-#calculate distance between every source. if two objects are closer than 3.3 arcsec, throw them both out
+
+# calculate distance between every source. if two objects are closer than 3.3 arcsec, throw them both out
 def removeNearObjs(month):
     global separation
     octxylist = []
@@ -336,8 +340,9 @@ def removeNearObjs(month):
             for y in range(len(tempx)):
                 f.write('circle(%s,%s,%s)' % (tempx[y], tempy[y], separation - 15) + '\n')
 
-#for sources which fit stellar sequence and have no neighbors, plot curve of growth plot.
-#take worst quality of the four chips as the radius aperture to use to calculate zeropoints
+
+# for sources which fit stellar sequence and have no neighbors, plot curve of growth plot.
+# take worst quality of the four chips as the radius aperture to use to calculate zeropoints
 def findAperture(month):
     global convergeap, convergesept
     if month == 'oct':
@@ -539,7 +544,7 @@ def twomassmatch():
         i = 1
         for x in lines:
             line = x.split()
-            if x.startswith('#') == False and x.split()[21][indexjhk] == '0'\
+            if x.startswith('#') == False and x.split()[21][indexjhk] == '0' \
                     and x.split()[23] == '0' and x.split()[24] == '0' \
                     and (x.split()[18][indexjhk] == 'A' or x.split()[18][indexjhk] == 'B'):
                 twomassRA.append(float(line[0]) * 1000)
@@ -608,13 +613,13 @@ def calculateOctZPs():
         if float(flux[num]) < 1:
             continue
         zp.append(float(Mag[num]) + float(2.5 * (math.log10(float(flux[num])))))
-        #if float(Mag[num]) + float(2.5 * (math.log10(float(flux[num])))) < 26.4:
-            #print flux[num]
+        # if float(Mag[num]) + float(2.5 * (math.log10(float(flux[num])))) < 26.4:
+        # print flux[num]
 
     octzp, octzperr = median(zp), st.biweight_midvariance(zp)
     print "%s zeropoints calculated in October" % (len(zp))
     plt.figure(30), plt.hist(zp, bins=15), plt.title("October Zeropoints Histogram")
-    plt.text(min(zp), len(zp)/5, "Med: %s \n BWMV: %s" % (octzp, octzperr))
+    plt.text(min(zp), len(zp) / 5, "Med: %s \n BWMV: %s" % (octzp, octzperr))
     axes = plt.gca()
     # axes.set_xlim([25, 28])
     if writeup == True:
@@ -684,7 +689,7 @@ def calculateSeptZPs():
 def extractionComment():
     print "First, Sextractor is run on September data. The pixel scale is given as 0.159 asec/pixel, and the FWHM is " \
           "measured to be 4.9 pixels. Therefore the SEEING_FWHM is calculated to be 0.78 asec. This value " \
-          "is used to configure Sextractor. The parameters retrieved are x and y" \
+          "is used to configure Sextractor. The parameters retrieved are x and y " \
           "coordinates, flags, star class, RA & Dec, FWHM_Image, and fluxes from apertures of size 0.4'' to 6.6 '', " \
           "in diameter, counting by 0.2'' \n \n The same is done on October data, though RAs and Decs are excluded, " \
           "and FWHM is taken to be 2.8, or 0.4452 arcsec. Catalogs and segmentation files " \
@@ -723,10 +728,14 @@ def twomassmatchcomment():
           " mp_flg == 0: \n \n with sources in the master October list, which now have RAs and Decs. " \
           "A magnitude is grabbed from a matched 2mass star, and a flux at the previously determined convergent " \
           "aperture is grabbed from the corresponding october source, and a zeropoint is calculated." \
-          "This is done for all stars in October data which have a 2mass match."
+          " This is done for all stars in October data which have a 2mass match."
+
+
 def OctZPcomment():
     print "Now a distribution of zeropoints for October data remains, and the median of that distribution is taken" \
           " to be a good estimate. This is then used to calculate magnitudes for every source in October. "
+
+
 def SeptZPcomment():
     print "Now we run all the same tests on September data that we did on October data, finding probable stars, " \
           "removing neighbors to prevent contamination, and finding the convergent aperture size. Now, referring " \
@@ -734,8 +743,6 @@ def SeptZPcomment():
           " convergent aperture size for Sept, we can calculate zeropoints for September stars. A histogram of these" \
           " zeropoints is displayed, and the result is printed. The estimate for the Sept zeropoint is the median" \
           " plus/minus the biweight midvariance of the spread of zeropoints."
-
-
 
 
 def median(lst):
@@ -752,6 +759,7 @@ def distance(p1, p2):
     x1, y1 = p1
     x2, y2 = p2
     return math.hypot(x2 - x1, y2 - y1)
+
 
 def run():
     extractSept()
@@ -782,4 +790,6 @@ def run():
     removeNearObjs('sept')
     findAperture('sept')
     calculateSeptZPs()
+
+
 run()
